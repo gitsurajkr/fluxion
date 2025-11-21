@@ -177,7 +177,7 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-  "password": "password123"
+  "password": "newpassword123"
 }
 ```
 
