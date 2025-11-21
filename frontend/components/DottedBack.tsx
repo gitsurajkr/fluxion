@@ -32,12 +32,12 @@ export function DottedGlowBackgroundDemoSecond(props: DemoProps) {
           <h2 className="text-center text-3xl font-normal tracking-tight sm:text-5xl md:text-left text-gradient bbh-sans-bartle">
             Wanna Level up your UI Game ?
           </h2>
-          <p className="mt-4 max-w-lg text-center  text-white md:text-left dark:text-neutral-300">
+          <p className="mt-4  max-w-2xl text-white md:text-left dark:text-neutral-300">
             Explore our curated selection of stunning templates designed to kickstart your next project with style and efficiency.
           </p>
         </div>
         <div className="flex flex-col gap-4 sm:flex-row">
-            <ButtonFooter title="Enter" href="/browsingPage" />
+            <ButtonFooter title="Enter" href="/signup" />
         </div>
       </div>
     </div>

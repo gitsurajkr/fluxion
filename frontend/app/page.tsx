@@ -10,6 +10,7 @@ import { PricingCard } from '@/components/ui/PricingCard';
 import Approach from '@/components/CanvasDemo';
 import { faqData } from '@/components/utils';
 import { DottedGlowBackgroundDemoSecond } from '@/components/DottedBack';
+import ScrollContext from './ScrollContext';
 
 
 
@@ -168,6 +169,7 @@ export default function Home() {
   }, []);
 
   return (
+  <ScrollContext>
     <div className='overflow-x-hidden'>
       {/* HERO */}
       <section id="hero" className="relative min-h-dvh w-full overflow-hidden flex flex-col justify-end bg-black">
@@ -182,7 +184,7 @@ export default function Home() {
           className='absolute inset-0 w-full h-full object-cover'>
 
           </video>
-           <h1 className={`bbh-sans-bartle text-3xl md:text-7xl text-gradient title transition-opacity duration-700 ${heroReady ? "opacity-100" : "opacity-0"}`}>
+           <h1 className={`bbh-sans-bartle text-3xl md:text-7xl text-gradient title transition-opacity duration-700`}>
               Fluxion
            </h1>
            
@@ -327,5 +329,6 @@ export default function Home() {
 
 
     </div>
+  </ScrollContext>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 import { MegaButton } from "@/components/ui/megaButton";
-import SignupFormDemo from "../../../components/signup-form-demo";
+import SignupFormDemo from "../../../components/SignupFormDemo";
 import Accordion from "@/components/ui/Accordion";
 import { faqData } from "@/components/utils";
 import { Navbar } from "@/components/Navbarr";
