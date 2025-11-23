@@ -17,7 +17,7 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String
-  role      String   @default("USER")
+  role      Role     @default(USER)
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -26,4 +26,20 @@ model User {
 enum Role {
   USER
   ADMIN
+}
+
+model Tempelate {
+  id        String   @id @default(cuid())
+  title     String
+  description   String
+  price    Float
+  thumbnailUrl String
+  isActive   TempelateStatus @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum TempelateStatus {
+  ACTIVE
+  INACTIVE
 }
