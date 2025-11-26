@@ -26,6 +26,7 @@ export default function Signup() {
     setError("");
 
     try {
+      // Added zod schema here..
       const validatedFormData = ZodSchemas.RegisterUser.safeParse(formData);
       if(!validatedFormData.success){
         return setError("Invalid signup data. Please check your inputs.");
