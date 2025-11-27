@@ -1,6 +1,6 @@
 "use client";
 import { MegaButton } from "@/components/ui/megaButton";
-import SignupFormDemo from "../../../components/SignupFormDemo";
+import SignupFormDemo from "@/components/SignupFormDemo";
 import Accordion from "@/components/ui/Accordion";
 import { faqData } from "@/components/utils";
 import { Navbar } from "@/components/Navbarr";
@@ -8,8 +8,8 @@ import { Navbar } from "@/components/Navbarr";
 export default function ContactPage() {
   return <div className="min-h-screen items-center justify-center bg-black">
     <Navbar />
-    <div className="flex items-center justify-center pt-20">
-      <SignupFormDemo />
+      <div className="flex items-center justify-center pt-20">
+      <SignupFormDemo {...({} as any)} />
     </div>
     
     <div>

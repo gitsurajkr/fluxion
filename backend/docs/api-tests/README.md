@@ -9,7 +9,8 @@ This folder contains API testing documentation organized by controller:
 - **[user-api.md](./user-api.md)** - User authentication, profile management, and admin operations
 - **[template-api.md](./template-api.md)** - Template CRUD operations (basic)
 - **[template-details-api.md](./template-details-api.md)** - Template details management (extended info)
-- **[cart-api.md](./cart-api.md)** - Shopping cart operations and checkout
+- **[cart-api.md](./cart-api.md)** - Shopping cart operations
+- **[order-api.md](./order-api.md)** - Order creation (checkout), management, and status updates
 - **[setup.md](./setup.md)** - Environment setup and prerequisites
 
 ## Quick Start
@@ -28,12 +29,14 @@ This folder contains API testing documentation organized by controller:
 ### User-Protected Endpoints (JWT Required)
 - User profile operations
 - User account management
-- **Cart operations (add, update, remove, checkout)**
-
+- Cart operations (add, update, remove, view)
+- Order operations (checkout, view orders, cancel orders)
 ### Admin-Only Endpoints (Admin JWT Required)
 - Template CRUD (create, update, delete)
 - Template Details CRUD
 - User role management
+- User listing
+- Order status updates (mark as completed/cancelled)nagement
 - User listing
 
 ## Testing Tools

@@ -3,6 +3,7 @@ import userRoutes from "./userRoute.ts";
 import tempelateRoutes from "./templateRoute.ts";
 import tempelateDetailRoutes from "./templateDetailRoute.ts";
 import cartRoutes from "./cartRoute.ts";
+import orderRoutes from "./orderRoute.ts";
 
 class AppRoutes {
     public router = express.Router();
@@ -17,8 +18,7 @@ class AppRoutes {
         this.router.use("/templates", tempelateRoutes);
         this.router.use("/template-details", tempelateDetailRoutes);
         this.router.use("/cart", cartRoutes);
-        // this.router.use("/products", productRoutes);
-        // this.router.use("/orders", orderRoutes);
+        this.router.use("/orders", orderRoutes);
     }
 }
 

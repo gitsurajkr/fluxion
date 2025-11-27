@@ -50,7 +50,7 @@ class UserController {
 			maxAge: 1000 * 60 * 60, // 1 hour
 		});			const { password, ...safeUser } = user;
 
-			res.status(201).json({ message: "User registered successfully", user: safeUser, token });
+			res.status(201).json({ message: "User registered successfully", user: safeUser });
 
 		} catch (err: any) {
 
@@ -96,17 +96,17 @@ class UserController {
 			{ userId: user.id, email: user.email, role: user.role },
 			process.env.JWT_SECRET,
 			{ expiresIn: "1h" }
-		);			
+		);
 		res.cookie("auth_token", token, {
 				httpOnly: true,
 				secure: process.env.NODE_ENV === "production",
 				sameSite: "lax",
 				maxAge: 1000 * 60 * 60, // 1 hour
-				path: "/"
-			});
+			path: "/"
+		});
 
 		const { password, ...safeUser } = user;
-		res.status(200).json({ message: "User logged in successfully", user: safeUser, token });
+		res.status(200).json({ message: "User logged in successfully", user: safeUser });
 
 	} catch (err: any) {
 
@@ -270,6 +270,17 @@ class UserController {
 			const targetUserId = req.params.id || "";
 			const currentUserId = req.user?.id;
 
+			if (!targetUserId) {
+				res.status(400).json({ message: "User ID is required" });
+				return;
+			}
+
+			// Only allow users to view their own profile, or admins to view anyone
+			if (currentUserId !== targetUserId && req.user?.role !== 'ADMIN') {
+				res.status(403).json({ message: "Access denied" });
+				return;
+			}
+
 			const user = await prisma.user.findUnique({
 				where: { id: targetUserId },
 				select: {
@@ -346,6 +357,15 @@ class UserController {
 				return;
 			}
 
+			// Prevent demoting the last admin
+			if (role === 'USER') {
+				const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
+				if (adminCount <= 1) {
+					res.status(400).json({ message: "Cannot demote the last admin" });
+					return;
+				}
+			}
+
 			// Prevent admins from accidentally demoting themselves
 			if (targetUserId === currentUser.id) {
 				res.status(400).json({
@@ -389,8 +409,8 @@ class UserController {
 			const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
 			const skip = (page - 1) * limit;
 
-			// Search/filter params
-			const search = (req.query.search as string)?.trim() || "";
+			// Search/filter params - sanitize and limit search input
+			const search = ((req.query.search as string)?.trim() || "").substring(0, 100);
 			const role = req.query.role as string;
 
 			// Build where clause

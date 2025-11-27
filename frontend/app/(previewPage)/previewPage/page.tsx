@@ -1,11 +1,96 @@
 "use client";
-import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbarr";
-
-import ButtonFooter from "@/components/ButtonFooter";
 import FigmaEmbed from "@/components/ui/iphoneMockup";
+import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { templateAPI, templateDetailAPI} from "@/lib/api";
+import { Template, TemplateDetail } from "@/lib/index";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 
 export default function PreviewPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const templateId = searchParams.get("id");
+  const { isAuthenticated } = useAuth();
+  const { addToCart } = useCart();
+  
+  const [template, setTemplate] = useState<Template | null>(null);
+  const [templateDetail, setTemplateDetail] = useState<TemplateDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [addingToCart, setAddingToCart] = useState(false);
+
+  useEffect(() => {
+    async function fetchTemplateData() {
+      if (!templateId) {
+        setError("No template ID provided");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        // Fetch both template and template details
+        const [templateRes, detailRes] = await Promise.all([
+          templateAPI.getTemplateById(templateId),
+          templateDetailAPI.getTemplateDetailByTemplateId(templateId).catch(() => null)
+        ]);
+
+        if (templateRes.template) {
+          setTemplate(templateRes.template);
+        }
+
+        if (detailRes?.templateDetails) {
+          setTemplateDetail(detailRes.templateDetails);
+        }
+      } catch (err) {
+        console.error("Error fetching template:", err);
+        setError("Failed to load template. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTemplateData();
+  }, [templateId]);
+
+  const handleAddToCart = async () => {
+    if (!isAuthenticated) {
+      router.push("/signin");
+      return;
+    }
+
+    if (!templateId) return;
+
+    try {
+      setAddingToCart(true);
+      await addToCart(templateId, 1);
+      router.push("/cartPage");
+    } catch (err: any) {
+      console.error("Error adding to cart:", err);
+      alert(err.response?.data?.message || "Failed to add to cart");
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-black min-h-screen flex items-center justify-center">
+        <div className="text-white text-xl">Loading template...</div>
+      </div>
+    );
+  }
+
+  if (error || !template) {
+    return (
+      <div className="bg-black min-h-screen flex items-center justify-center">
+        <div className="text-red-500 text-xl">{error || "Template not found"}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-black min-h-dvh overflow-x-hidden">
       <Navbar />
@@ -14,57 +99,62 @@ export default function PreviewPage() {
         {/* Left Content */}
         <div className="mt-20 lg:mt-32">
           <h1 className="font-extrabold text-white text-3xl lg:text-5xl leading-tight bbh-sans-bartle text-center lg:text-left">
-            HEADER FOR THE TEMPLATE | APP
+            {templateDetail?.header || template.title}
           </h1>
 
           <div className="py-10 lg:py-20 max-w-3xl mx-auto space-y-6 text-center lg:text-left">
             <p className="text-base lg:text-lg text-white leading-relaxed">
-              Looking to build your own multi-location grocery store app like
-              <span className="font-semibold text-white"> Big Bazaar</span>,
-              <span className="font-semibold text-white"> JioMart</span>,
-              <span className="font-semibold text-white"> Vishal Mega Mart</span>,
-              or <span className="font-semibold text-white"> Walmart Pantry</span>? 
-              Then this package is for you.
+              {templateDetail?.headerSubtitle || template.description}
             </p>
 
             <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-              <ButtonFooter title="Buy Now: $99" href="/cartPage" />
-              <ButtonFooter title="Add to Cart" href="/cartPage" />
+              <button
+                onClick={handleAddToCart}
+                disabled={addingToCart}
+                className="px-8 py-3 bg-gradient-to-r from-zinc-900 via-black to-zinc-900 text-white font-semibold rounded-lg hover:from-zinc-800 hover:via-zinc-900 hover:to-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all border border-white/20"
+              >
+                {addingToCart ? "Adding..." : `Buy Now: $${template.price}`}
+              </button>
+              <button
+                onClick={handleAddToCart}
+                disabled={addingToCart}
+                className="px-8 py-3 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-lg hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all border border-white/20"
+              >
+                {addingToCart ? "Adding..." : "Add to Cart"}
+              </button>
             </div>
 
-            <div className="space-y-4 text-left text-white">
-              <h2 className="text-lg lg:text-xl font-bold">
-                Multi-Location Grocery Delivery System Features:
-              </h2>
-              <ol className="list-disc pl-6 space-y-2">
-                <li>User-friendly interface</li>
-                <li>Real-time order tracking</li>
-                <li>Multiple payment options</li>
-                <li>Admin dashboard for products and orders</li>
-              </ol>
+            {templateDetail?.features && templateDetail.features.length > 0 && (
+              <div className="space-y-4 text-left text-white">
+                <h2 className="text-lg lg:text-xl font-bold">
+                  Features:
+                </h2>
+                <ol className="list-disc pl-6 space-y-2">
+                  {templateDetail.features.map((feature, index) => (
+                    <li key={index}>{feature}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
 
-              <p>
-                Perfect for grocery chains like{" "}
-                <span className="font-semibold">Vishal Mega Mart</span>,{" "}
-                <span className="font-semibold">Jio Mart</span>,{" "}
-                <span className="font-semibold">Big Bazaar</span>, or{" "}
-                <span className="font-semibold">Walmart Grocery</span>.
-              </p>
-
-              <p>
-                Go online quickly and cost-effectively, saving up to{" "}
-                <span className="font-semibold">70–90%</span> of development time. 
-                Packages are live within{" "}
-                <span className="font-semibold">4–5 working days</span>.
-              </p>
-            </div>
+            {templateDetail?.benefits && templateDetail.benefits.length > 0 && (
+              <div className="space-y-4 text-left text-white">
+                <h2 className="text-lg lg:text-xl font-bold">
+                  Benefits:
+                </h2>
+                <ol className="list-disc pl-6 space-y-2">
+                  {templateDetail.benefits.map((benefit, index) => (
+                    <li key={index}>{benefit}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Right Side (Figma Embed) */}
         <div className="mt-12 lg:mt-0 flex justify-center items-center">
           <FigmaEmbed src="https://www.figma.com/embed?embed_host=share&url=https://www.figma.com/proto/jYREOgJvzwciYhyAg2A0qO/Untitled?page-id=0%3A1&node-id=29-2&p=f&viewport=1612%2C8600%2C0.08&t=d4LzjnueM7WcV5RG-1&scaling=scale-down&content-scaling=fixed&starting-point-node-id=29%3A2" />
-
         </div>
       </div>
 

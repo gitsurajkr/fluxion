@@ -3,7 +3,6 @@ import Tempelate from "../controller/Template.ts";
 import AuthMiddleware from "../middleware/auth.ts";
 class TemplateRoutes {
     router = express.Router();
-
     constructor() {
         this.init();
     }
@@ -16,5 +15,7 @@ class TemplateRoutes {
         this.router.get("/get-all-templates", Tempelate.getAllTemplates);
     }
 }
+
+
 
 export default new TemplateRoutes().router;
