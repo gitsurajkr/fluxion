@@ -16,13 +16,14 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl">Please wait</div>
       </div>
     );
   }
 
   if (!isAuthenticated) {
-    return null;
+    //Put this line below, replacing => return null
+    router.push("/signin");
   }
 
   return <>{children}</>;
