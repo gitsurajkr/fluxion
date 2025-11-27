@@ -26,6 +26,13 @@ class CartController {
               thumbnailUrl: true,
               isActive: true
             }
+          },
+          tempelateDetail: {
+            select: {
+              id: true,
+              header: true,
+              headerSubtitle: true
+            }
           }
         },
         orderBy: { createdAt: 'desc' }
@@ -70,7 +77,27 @@ class CartController {
         return;
       }
 
-      const { tempelateId, quantity } = validation.data;
+      let { tempelateId, tempelateDetailId, quantity } = validation.data;
+
+      // If only tempelateDetailId provided, get tempelateId from it
+      if (!tempelateId && tempelateDetailId) {
+        const detail = await prisma.tempelateDetail.findUnique({
+          where: { id: tempelateDetailId }
+        });
+
+        if (!detail) {
+          res.status(404).json({ message: "Template model/detail not found" });
+          return;
+        }
+
+        tempelateId = detail.tempelateId;
+      }
+
+      // Validate tempelateId is provided (either directly or from detail)
+      if (!tempelateId) {
+        res.status(400).json({ message: "Either tempelateId or tempelateDetailId is required" });
+        return;
+      }
 
       // Check if template exists and is active
       const template = await prisma.tempelate.findUnique({
@@ -87,13 +114,29 @@ class CartController {
         return;
       }
 
-      // Check if item already in cart
-      const existingCartItem = await prisma.cart.findUnique({
+      // If template detail/model ID provided, validate it belongs to this template
+      if (tempelateDetailId) {
+        const detail = await prisma.tempelateDetail.findUnique({
+          where: { id: tempelateDetailId }
+        });
+
+        if (!detail) {
+          res.status(404).json({ message: "Template model/detail not found" });
+          return;
+        }
+
+        if (detail.tempelateId !== tempelateId) {
+          res.status(400).json({ message: "Template model does not belong to this template" });
+          return;
+        }
+      }
+
+      // Check if item already in cart (match by userId, tempelateId, AND tempelateDetailId)
+      const existingCartItem = await prisma.cart.findFirst({
         where: {
-          userId_tempelateId: {
-            userId,
-            tempelateId
-          }
+          userId,
+          tempelateId,
+          tempelateDetailId: tempelateDetailId ?? null
         }
       });
 
@@ -103,7 +146,7 @@ class CartController {
         // Calculate new quantity
         const newQuantity = existingCartItem.quantity + quantity;
 
-        // Check max limit (from Zod CartSchema)
+       
         if (newQuantity > 100) {
           res.status(400).json({
             message: `Cannot add ${quantity} items. Maximum 100 per template. Current: ${existingCartItem.quantity}`
@@ -111,7 +154,7 @@ class CartController {
           return;
         }
 
-        // Update quantity (add to existing)
+        // Update quantity 
         cartItem = await prisma.cart.update({
           where: { id: existingCartItem.id },
           data: {
@@ -125,6 +168,13 @@ class CartController {
                 price: true,
                 thumbnailUrl: true
               }
+            },
+            tempelateDetail: {
+              select: {
+                id: true,
+                header: true,
+                headerSubtitle: true
+              }
             }
           }
         });
@@ -134,6 +184,7 @@ class CartController {
           data: {
             userId,
             tempelateId,
+            ...(tempelateDetailId && { tempelateDetailId }),
             quantity
           },
           include: {
@@ -143,6 +194,13 @@ class CartController {
                 title: true,
                 price: true,
                 thumbnailUrl: true
+              }
+            },
+            tempelateDetail: {
+              select: {
+                id: true,
+                header: true,
+                headerSubtitle: true
               }
             }
           }
@@ -170,10 +228,10 @@ class CartController {
   async updateCartItem(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
-      const { tempelateId } = req.params;
+      const { cartItemId } = req.params;
 
-      if (!tempelateId) {
-        res.status(400).json({ message: "tempelateId is required" });
+      if (!cartItemId) {
+        res.status(400).json({ message: "cartItemId is required" });
         return;
       }
 
@@ -198,13 +256,18 @@ class CartController {
         return;
       }
 
+      // Verify cart item belongs to user before updating
+      const existingItem = await prisma.cart.findUnique({
+        where: { id: cartItemId }
+      });
+
+      if (!existingItem || existingItem.userId !== userId) {
+        res.status(404).json({ message: "Cart item not found" });
+        return;
+      }
+
       const cartItem = await prisma.cart.update({
-        where: {
-          userId_tempelateId: {
-            userId,
-            tempelateId
-          }
-        },
+        where: { id: cartItemId },
         data: { quantity },
         include: {
           tempelate: {
@@ -212,6 +275,12 @@ class CartController {
               id: true,
               title: true,
               price: true
+            }
+          },
+          tempelateDetail: {
+            select: {
+              id: true,
+              header: true
             }
           }
         }
@@ -238,32 +307,37 @@ class CartController {
   async removeFromCart(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
-      const { tempelateId } = req.params;
+      const { cartItemId } = req.params;
 
       if (!userId) {
         res.status(401).json({ message: "Unauthorized" });
         return;
       }
 
-      if (!tempelateId) {
-        res.status(400).json({ message: "tempelateId is required" });
+      if (!cartItemId) {
+        res.status(400).json({ message: "cartItemId is required" });
+        return;
+      }
+
+      // Verify cart item belongs to user before deleting
+      const existingItem = await prisma.cart.findUnique({
+        where: { id: cartItemId }
+      });
+
+      if (!existingItem || existingItem.userId !== userId) {
+        res.status(404).json({ message: "Cart item not found" });
         return;
       }
 
       await prisma.cart.delete({
-        where: {
-          userId_tempelateId: {
-            userId,
-            tempelateId
-          }
-        }
+        where: { id: cartItemId }
       });
 
       res.status(200).json({ message: "Item removed from cart" });
 
     } catch (error: any) {
       console.error("Error removing from cart:", error);
-
+      // prisma error handling
       if (error.code === "P2025") {
         res.status(404).json({ message: "Cart item not found" });
         return;
@@ -296,73 +370,11 @@ class CartController {
       res.status(500).json({ message: "An error occurred while clearing cart" });
     }
   }
-
-  // Checkout cart (placeholder - implement order creation later)
-  async checkout(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        res.status(401).json({ message: "Unauthorized" });
-        return;
-      }
-
-      const cartItems = await prisma.cart.findMany({
-        where: { userId },
-        include: {
-          tempelate: {
-            select: {
-              id: true,
-              title: true,
-              price: true,
-              isActive: true
-            }
-          }
-        }
-      });
-
-      if (cartItems.length === 0) {
-        res.status(400).json({ message: "Cart is empty" });
-        return;
-      }
-
-      // Validate all templates are still active
-      const inactiveItems = cartItems.filter(item => item.tempelate.isActive !== "ACTIVE");
-      if (inactiveItems.length > 0) {
-        res.status(400).json({
-          message: "Some items are no longer available",
-          inactiveItems: inactiveItems.map(item => item.tempelate.title)
-        });
-        return;
-      }
-
-      // Calculate total
-      const totalPrice = cartItems.reduce((sum, item) =>
-        sum + (item.tempelate.price * item.quantity), 0
-      );
-
-      // TODO: Create Order, process payment, clear cart
-      // For now, return checkout summary
-      res.status(200).json({
-        message: "Checkout summary (order creation not implemented)",
-        items: cartItems.map(item => ({
-          templateId: item.tempelateId ?? "",
-          title: item.tempelate.title,
-          quantity: item.quantity,
-          unitPrice: item.tempelate.price,
-          subtotal: item.tempelate.price * item.quantity
-        })),
-        totalPrice,
-        totalItems: cartItems.reduce((sum, item) => sum + item.quantity, 0),
-        note: "Payment processing and order creation to be implemented"
-      });
-
-    } catch (error: any) {
-      console.error("Error during checkout:", error);
-      res.status(500).json({ message: "An error occurred during checkout" });
-    }
-  }
 }
 
 export default new CartController();
 
-// checkOut
+
+
+
+

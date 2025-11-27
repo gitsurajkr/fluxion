@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
 
 class AuthMiddleware {
     static authenticateToken(req: Request, res: Response, next: NextFunction) {
@@ -32,6 +33,13 @@ class AuthMiddleware {
             }
         });
     }
+
+    static rateLimiter = rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 100, // limit each IP to 100 requests per windowMs
+        message: "Too many requests from this IP, please try again later."
+    });
+
 }
 
 export default AuthMiddleware;  

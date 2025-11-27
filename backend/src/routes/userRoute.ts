@@ -10,8 +10,8 @@ class UserRoutes {
     }
 
     private init() {
-        this.router.post("/signup", userController.RegisterUser);
-        this.router.post("/signin", userController.LoginUser);
+        this.router.post("/signup", AuthMiddleware.rateLimiter, userController.RegisterUser);
+        this.router.post("/signin", AuthMiddleware.rateLimiter, userController.LoginUser);
 
         this.router.get("/get-profile", AuthMiddleware.authenticateToken, userController.getUserProfile);
         this.router.put("/update-profile", AuthMiddleware.authenticateToken, userController.updateUserProfile);

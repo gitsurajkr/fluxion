@@ -1,0 +1,284 @@
+"use client";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import { Navbar } from "@/components/Navbarr";
+import { orderAPI } from "@/lib/api";
+import { Order } from "@/lib/index";
+import { useRouter, useParams } from "next/navigation";
+import Image from "next/image";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+function OrderDetailsPageContent() {
+  const router = useRouter();
+  const params = useParams();
+  const orderId = params.orderId as string;
+
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
+  useEffect(() => {
+    if (orderId) {
+      fetchOrderDetails();
+    }
+  }, [orderId]);
+
+  const fetchOrderDetails = async () => {
+    try {
+      setLoading(true);
+      const response = await orderAPI.getOrderById(orderId);
+      if (response.order) {
+        setOrder(response.order);
+      }
+    } catch (err: any) {
+      console.error("Error fetching order:", err);
+      if (err.response?.status === 401) {
+        setError("Please login to view order details");
+        router.push("/signin");
+      } else if (err.response?.status === 403) {
+        setError("Access denied");
+      } else if (err.response?.status === 404) {
+        setError("Order not found");
+      } else {
+        setError("Failed to load order. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    try {
+      setCancelling(true);
+      await orderAPI.cancelOrder(orderId);
+      alert("Order cancelled successfully!");
+      await fetchOrderDetails(); // Refresh order details
+    } catch (err: any) {
+      console.error("Error cancelling order:", err);
+      if (err.response?.data?.message) {
+        alert(err.response.data.message);
+      } else {
+        alert("Failed to cancel order. Please try again.");
+      }
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "COMPLETED":
+        return "text-green-400 bg-green-400/10 border-green-400/20";
+      case "PENDING":
+        return "text-yellow-400 bg-yellow-400/10 border-yellow-400/20";
+      case "CANCELLED":
+        return "text-red-400 bg-red-400/10 border-red-400/20";
+      default:
+        return "text-gray-400 bg-gray-400/10 border-gray-400/20";
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <p className="text-xl">Loading order details...</p>
+      </div>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <div className="min-h-screen bg-black text-white px-4 py-10">
+        <Navbar />
+        <div className="max-w-4xl mx-auto text-center py-20">
+          <p className="text-red-500 text-xl mb-4">{error || "Order not found"}</p>
+          <Button
+            onClick={() => router.push("/orders")}
+            className="bg-white text-black hover:bg-gray-200"
+          >
+            Back to Orders
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
+      <div className="min-h-screen bg-black text-white px-4 py-10">
+        <Navbar />
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <Button
+              onClick={() => router.push("/orders")}
+              variant="outline"
+              className="mb-4 border-zinc-700 hover:bg-zinc-800"
+            >
+              ← Back to Orders
+            </Button>
+            <h1 className="text-3xl font-bold bbh-sans-bartle">Order Details</h1>
+          </div>
+
+          {/* Order Info Card */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <p className="text-sm text-gray-400 mb-1">Order ID</p>
+                <p className="font-mono">{order.id}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-400 mb-1">Status</p>
+                <span
+                  className={`inline-block px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(
+                    order.status
+                  )}`}
+                >
+                  {order.status}
+                </span>
+              </div>
+              <div>
+                <p className="text-sm text-gray-400 mb-1">Order Date</p>
+                <p>{formatDate(order.createdAt)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-400 mb-1">Total Amount</p>
+                <p className="text-2xl font-bold">${order.total.toFixed(2)}</p>
+              </div>
+              {order.paymentId && (
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">Payment ID</p>
+                  <p className="font-mono text-sm">{order.paymentId}</p>
+                </div>
+              )}
+              {order.paymentRef && (
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">Payment Reference</p>
+                  <p className="font-mono text-sm">{order.paymentRef}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Cancel Order Button */}
+            {order.status === "PENDING" && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
+                    disabled={cancelling}
+                  >
+                    {cancelling ? "Cancelling..." : "Cancel Order"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-white">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancel Order?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-gray-400">
+                      Are you sure you want to cancel this order? This action cannot be
+                      undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="bg-zinc-800 text-white hover:bg-zinc-700">
+                      Keep Order
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleCancelOrder}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Cancel Order
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+
+          {/* Order Items */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+            <h2 className="text-xl font-bold mb-4">Order Items</h2>
+            <div className="space-y-4">
+              {order.orderItems?.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-4 bg-zinc-800/50 rounded-lg p-4"
+                >
+                  <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-zinc-700 flex-shrink-0">
+                    <Image
+                      src={item.tempelate.thumbnailUrl}
+                      alt={item.tempelate.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">{item.tempelate.title}</h3>
+                    {item.tempelateDetail && (
+                      <p className="text-sm text-gray-400">
+                        {item.tempelateDetail.header}
+                      </p>
+                    )}
+                    <p className="text-sm text-gray-400 mt-1">
+                      Quantity: {item.quantity}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold">${item.price.toFixed(2)}</p>
+                    <p className="text-sm text-gray-400">per item</p>
+                    <p className="text-sm font-semibold mt-1">
+                      Total: ${(item.price * item.quantity).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Order Total */}
+            <div className="border-t border-zinc-700 mt-6 pt-4">
+              <div className="flex justify-between items-center text-xl font-bold">
+                <span>Order Total</span>
+                <span>${order.total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+export default function OrderDetailsPage() {
+  return (
+    <ProtectedRoute>
+      <OrderDetailsPageContent />
+    </ProtectedRoute>
+  );
+}

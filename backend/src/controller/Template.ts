@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma.ts";
 import { Request, Response } from "express";
 import ZodSchemas, { TemplateType } from "src/lib/zodValidation.ts";
+import xss from "xss";
 
 class ProductController {
   // add template
@@ -11,8 +12,16 @@ class ProductController {
         res.status(400).json({ message: "Invalid data", errors: data.error.issues });
         return;
       }
+
+      // Sanitize inputs to prevent XSS
+      const sanitizedData = {
+        ...data.data,
+        title: xss(data.data.title),
+        description: xss(data.data.description)
+      };
+
       const createTemplate = await prisma.tempelate.create({
-        data: data.data
+        data: sanitizedData
       });
       res.status(201).json({ message: "Template created successfully", template: createTemplate });
 
@@ -41,9 +50,19 @@ class ProductController {
         res.status(400).json({ message: "Invalid data", errors: data.error.issues });
         return;
       }
+
+      // Sanitize inputs to prevent XSS
+      const sanitizedData: any = {};
+      if (data.data.title) sanitizedData.title = xss(data.data.title);
+      if (data.data.description) sanitizedData.description = xss(data.data.description);
+      if (data.data.price !== undefined) sanitizedData.price = data.data.price;
+      if (data.data.imageUrl) sanitizedData.imageUrl = data.data.imageUrl;
+      if (data.data.thumbnailUrl) sanitizedData.thumbnailUrl = data.data.thumbnailUrl;
+      if (data.data.isActive !== undefined) sanitizedData.isActive = data.data.isActive;
+
       const updatedTemplate = await prisma.tempelate.update({
         where: { id },
-        data: data.data
+        data: sanitizedData
       });
       res.status(200).json({ message: "Template updated successfully", template: updatedTemplate });
     } catch (error) {

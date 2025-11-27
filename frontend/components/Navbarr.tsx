@@ -2,11 +2,24 @@
 import React, { useState } from "react";
 import { HoveredLink, Menu, MenuItem, ProductItem } from "./ui/navbar-menu";
 import { cn } from "@/lib/utils";
-import { Link, Menu as MenuIcon, X } from "lucide-react"; // hamburger + close icons
+import { Menu as MenuIcon, X, ShoppingCart, User, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import { useRouter } from "next/navigation";
 
 export function Navbar({ className }: { className?: string }) {
   const [active, setActive] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState(false); // mobile menu toggle
+  const [isOpen, setIsOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
+  const { cartCount } = useCart();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    setShowUserMenu(false);
+    router.push("/");
+  };
 
   return (
     <nav
@@ -18,12 +31,12 @@ export function Navbar({ className }: { className?: string }) {
       {/* Navbar container */}
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 md:px-6">
         {/* Brand */}
-        <Link href="/" className="text-white font-bold text-lg tracking-wide">
+        <a href="/" className="text-white font-bold text-lg tracking-wide">
           Fluxion
-        </Link>
+        </a>
 
         {/* Desktop menu */}
-        <div className="hidden md:flex space-x-8 text-white text-sm">
+        <div className="hidden md:flex items-center space-x-6 text-white text-sm">
           <Menu setActive={setActive}>
             <MenuItem setActive={setActive} active={active} item="Services">
               <div className="flex flex-col space-y-4 text-sm">
@@ -70,20 +83,148 @@ export function Navbar({ className }: { className?: string }) {
               </div>
             </MenuItem>
           </Menu>
+
+          {/* Cart Icon with Badge */}
+          <button
+            onClick={() => router.push("/cartPage")}
+            className="relative p-2 hover:bg-white/10 rounded-lg transition"
+          >
+            <ShoppingCart size={20} />
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                {cartCount}
+              </span>
+            )}
+          </button>
+
+          {/* User Menu */}
+          {isAuthenticated ? (
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center space-x-2 p-2 hover:bg-white/10 rounded-lg transition"
+              >
+                <User size={20} />
+                <span className="text-sm">{user?.name}</span>
+              </button>
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-black/90 backdrop-blur-lg border border-white/10 rounded-lg shadow-xl py-2">
+                  <button
+                    onClick={() => {
+                      router.push("/orders");
+                      setShowUserMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-white/10 transition"
+                  >
+                    My Orders
+                  </button>
+                  <button
+                    onClick={() => {
+                      router.push("/profile");
+                      setShowUserMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-white/10 transition"
+                  >
+                    Profile
+                  </button>
+                  <hr className="border-white/10 my-2" />
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 hover:bg-white/10 transition flex items-center space-x-2 text-red-400"
+                  >
+                    <LogOut size={16} />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => router.push("/signin")}
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition"
+            >
+              Sign In
+            </button>
+          )}
         </div>
 
         {/* Mobile hamburger icon */}
-        <button
-          className="md:hidden text-white p-2 rounded-lg hover:bg-white/10 transition"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? <X size={24} /> : <MenuIcon size={24} />}
-        </button>
+        <div className="md:hidden flex items-center space-x-4">
+          {/* Cart Icon for Mobile */}
+          <button
+            onClick={() => router.push("/cartPage")}
+            className="relative p-2 hover:bg-white/10 rounded-lg transition"
+          >
+            <ShoppingCart size={20} className="text-white" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                {cartCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            className="text-white p-2 rounded-lg hover:bg-white/10 transition"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen ? <X size={24} /> : <MenuIcon size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile dropdown menu */}
       {isOpen && (
         <div className="md:hidden bg-black/80 backdrop-blur-lg border-t border-white/10 px-4 py-3 space-y-4 text-white text-sm">
+          {/* User Info for Mobile */}
+          {isAuthenticated ? (
+            <div className="flex flex-col space-y-2 pb-3 border-b border-white/10">
+              <div className="flex items-center space-x-2">
+                <User size={18} />
+                <span className="font-semibold">{user?.name}</span>
+              </div>
+              <button
+                onClick={() => {
+                  router.push("/orders");
+                  setIsOpen(false);
+                }}
+                className="text-left pl-6 hover:text-gray-300"
+              >
+                My Orders
+              </button>
+              <button
+                onClick={() => {
+                  router.push("/profile");
+                  setIsOpen(false);
+                }}
+                className="text-left pl-6 hover:text-gray-300"
+              >
+                Profile
+              </button>
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setIsOpen(false);
+                }}
+                className="text-left pl-6 hover:text-gray-300 text-red-400 flex items-center space-x-2"
+              >
+                <LogOut size={16} />
+                <span>Logout</span>
+              </button>
+            </div>
+          ) : (
+            <div className="pb-3 border-b border-white/10">
+              <button
+                onClick={() => {
+                  router.push("/signin");
+                  setIsOpen(false);
+                }}
+                className="w-full px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition"
+              >
+                Sign In
+              </button>
+            </div>
+          )}
+
           <div className="flex flex-col space-y-3">
             <span className="font-semibold text-gray-300">Services</span>
             <HoveredLink href="/web-dev">Web Development</HoveredLink>

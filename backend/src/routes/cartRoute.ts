@@ -13,10 +13,9 @@ class CartRoutes {
         // All cart routes require authentication
         this.router.get("/", AuthMiddleware.authenticateToken, CartController.getCart);
         this.router.post("/add", AuthMiddleware.authenticateToken, CartController.addToCart);
-        this.router.put("/update/:tempelateId", AuthMiddleware.authenticateToken, CartController.updateCartItem);
-        this.router.delete("/remove/:tempelateId", AuthMiddleware.authenticateToken, CartController.removeFromCart);
+        this.router.put("/update/:cartItemId", AuthMiddleware.authenticateToken, CartController.updateCartItem);
+        this.router.delete("/remove/:cartItemId", AuthMiddleware.authenticateToken, CartController.removeFromCart);
         this.router.delete("/clear", AuthMiddleware.authenticateToken, CartController.clearCart);
-        this.router.post("/checkout", AuthMiddleware.authenticateToken, CartController.checkout);
     }
 }
 

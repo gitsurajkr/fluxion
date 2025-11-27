@@ -1,22 +1,19 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 import axios from "axios";
-interface RegisterData {
-  name: string;
-  email: string;
-  password: string;
-}
+import { 
+  ApiResponse, 
+  LoginData, 
+  RegisterData, 
+  TemplateDetail, 
+  TemplateDetailResponse, 
+  TemplateResponse,
+  CartItem,
+  CartResponse,
+  AddToCartData,
+  OrderResponse,
+  CreateOrderData
+} from ".";
 
-interface LoginData {
-  email: string;
-  password: string;
-}
-
-interface ApiResponse<T = any> {
-  message: string;
-  user?: T;
-  token?: string;
-  errors?: any;
-}
 
 export const authAPI = {
   async signup(data: RegisterData): Promise<ApiResponse> {
@@ -57,5 +54,118 @@ export const authAPI = {
     }
     return result;
   }
+  
+};
+
+
+export const templateAPI = {
+  async getAllTemplates(): Promise<TemplateResponse> {
+    const response = await axios.get(`${API_BASE_URL}/api/templates/get-all-templates`);
+    return response.data;
+  },
+
+  async getTemplateById(id: string): Promise<TemplateResponse> {
+    const response = await axios.get(`${API_BASE_URL}/api/templates/get-template/${id}`);
+    return response.data;
+  },
+};
+
+
+export const templateDetailAPI = {
+  async getTemplateDetailByTemplateId(templateId: string): Promise<TemplateDetailResponse> {
+    const response = await axios.get(`${API_BASE_URL}/api/template-details/get-by-template/${templateId}`);
+    return response.data;
+  },
+};
+
+export const cartAPI = {
+  async getCart(): Promise<CartResponse> {
+    const response = await axios.get(`${API_BASE_URL}/api/cart`, {
+      withCredentials: true,
+    });
+    return response.data;
+  },
+
+  async addToCart(data: AddToCartData): Promise<CartResponse> {
+    const response = await axios.post(`${API_BASE_URL}/api/cart/add`, data, {
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data;
+  },
+
+  async updateCartItem(cartItemId: string, quantity: number): Promise<CartResponse> {
+    const response = await axios.put(
+      `${API_BASE_URL}/api/cart/update/${cartItemId}`,
+      { quantity },
+      {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data;
+  },
+
+  async removeFromCart(cartItemId: string): Promise<CartResponse> {
+    const response = await axios.delete(
+      `${API_BASE_URL}/api/cart/remove/${cartItemId}`,
+      {
+        withCredentials: true,
+      }
+    );
+    return response.data;
+  },
+
+  async clearCart(): Promise<CartResponse> {
+    const response = await axios.delete(`${API_BASE_URL}/api/cart/clear`, {
+      withCredentials: true,
+    });
+    return response.data;
+  },
+};
+
+export const orderAPI = {
+  async createOrder(data: CreateOrderData): Promise<OrderResponse> {
+    const response = await axios.post(
+      `${API_BASE_URL}/api/orders/checkout`,
+      data,
+      {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data;
+  },
+
+  async getUserOrders(): Promise<OrderResponse> {
+    const response = await axios.get(`${API_BASE_URL}/api/orders`, {
+      withCredentials: true,
+    });
+    return response.data;
+  },
+
+  async getOrderById(orderId: string): Promise<OrderResponse> {
+    const response = await axios.get(`${API_BASE_URL}/api/orders/${orderId}`, {
+      withCredentials: true,
+    });
+    return response.data;
+  },
+
+  async cancelOrder(orderId: string): Promise<OrderResponse> {
+    const response = await axios.put(
+      `${API_BASE_URL}/api/orders/${orderId}/cancel`,
+      {},
+      {
+        withCredentials: true,
+      }
+    );
+    return response.data;
+  },
 };
 

@@ -113,6 +113,7 @@ curl -X GET "http://localhost:3000/api/template-details/list-all?page=1&limit=10
 **Auth Required:** Yes (Admin)  
 **Description:** Add detailed information to a template (one-time operation, use update for changes)
 
+
 **Request Body:**
 ```json
 {
