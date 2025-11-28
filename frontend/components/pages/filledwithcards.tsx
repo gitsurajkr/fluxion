@@ -51,7 +51,7 @@ export default function FilledwithCards() {
                 
                 {!loading && !error && templates.length === 0 && (
                     <div className="flex justify-center items-center min-h-[400px]">
-                        <div className="text-white text-xl">No templates available at the moment.</div>
+                        <div className="text-white text-xl zalando-sans-expanded">No templates available at the moment.</div>
                     </div>
                 )}
                 
