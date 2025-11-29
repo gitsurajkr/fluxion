@@ -9,10 +9,13 @@ import PieChartWithCustomizedLabel from "./PieChart";
 import { DataTable } from "./payments/data-table";
 import { columns } from "./payments/columns"
 import { getData } from "./payments/page";
+import ActiveUsersCard from "./ActiveUsers";
+import { TotalUsersCard } from "./TotalUsers";
+import { AdminNotesCard } from "./AdminNotes";
 
-export const BentoGridItem = ({id, onClick, className = "", children, heading, textColor = "text-white/35", SimpleChart, AreaChart, AdminActions, PieChart, DataTable} : 
+export const BentoGridItem = ({id, onClick, className = "", children, heading, textColor = "text-white/35", SimpleChart, AreaChart, AdminActions, PieChart, DataTable, ActiveUsers, TotalUsers, AdminNotes}: 
 {id: number;
-onClick: (id: number, heading: string, content: React.ReactNode, SimpleChart?: React.ReactNode, AreaChart?: React.ReactNode, AdminActions?: React.ReactNode, PieChart?: React.ReactNode, DataTable?: React.ReactNode) => void;
+onClick: (id: number, heading: string, content: React.ReactNode, SimpleChart?: React.ReactNode, AreaChart?: React.ReactNode, AdminActions?: React.ReactNode, PieChart?: React.ReactNode, DataTable?: React.ReactNode, ActiveUsers?: React.ReactNode, TotalUsers?: React.ReactNode, AdminNotes?: React.ReactNode) => void;
 className?: string;
 children: React.ReactNode;
 heading: string;
@@ -22,11 +25,14 @@ AreaChart?: React.ReactNode;
 AdminActions?: React.ReactNode;
 PieChart?: React.ReactNode;
 DataTable?: React.ReactNode;
+ActiveUsers?: React.ReactNode;
+TotalUsers?: React.ReactNode;
+AdminNotes?: React.ReactNode;
 }) => {
     return (
 <motion.div tabIndex={0} 
     layoutId={`card-${id}`}
-    onClick={() => onClick?.(id, heading, children, SimpleChart, AreaChart, AdminActions, PieChart, DataTable)}
+    onClick={() => onClick?.(id, heading, children, SimpleChart, AreaChart, AdminActions, PieChart, DataTable, ActiveUsers, TotalUsers, AdminNotes)}
     className={`
     w-full
     focus-visible:outline-none
@@ -84,7 +90,7 @@ const useOutsideClick = (callback: () => void) => {
 }
 
 export const BentoGrid = () => {
-  const [current, setCurrent] = useState<{id: number; heading: string; content: React.ReactNode, SimpleChart?: React.ReactNode, AreaChart?: React.ReactNode, AdminActions?: React.ReactNode, PieChart?: React.ReactNode, DataTable?: React.ReactNode} | null>(null);
+  const [current, setCurrent] = useState<{id: number; heading: string; content: React.ReactNode, SimpleChart?: React.ReactNode, AreaChart?: React.ReactNode, AdminActions?: React.ReactNode, PieChart?: React.ReactNode, DataTable?: React.ReactNode, ActiveUsers?: React.ReactNode, TotalUsers?: React.ReactNode, AdminNotes?: React.ReactNode} | null>(null);
   const reference = useOutsideClick(() => setCurrent(null));
   const [payments, setPayments] = useState<any[]>([]);
 
@@ -154,6 +160,24 @@ export const BentoGrid = () => {
             </div>
           )}
 
+          {current.ActiveUsers && (
+            <div className="mt-6">
+              {current.ActiveUsers}
+            </div>
+          )}
+
+          {current.TotalUsers && (
+            <div className="mt-6">
+              {current.TotalUsers}
+            </div>
+          )}
+
+          {current.AdminNotes && (
+            <div className="mt-6">
+              {current.AdminNotes}
+            </div>
+          )}
+
         </motion.div>
       )}
 
@@ -161,27 +185,30 @@ export const BentoGrid = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <BentoGridItem
           id={1}
-          onClick={(id, heading, content) => setCurrent({id, heading, content})}
+          onClick={(id, heading, content, SimpleChart, AreaChart, AdminActions, PieChart, DataTable, ActiveUsers, TotalUsers, AdminNotes) => setCurrent({id, heading, content, AdminNotes})}
           className="min-h-[180px] sm:min-h-[200px] md:min-h-[250px] col-span-1 sm:col-span-3"
           heading="ADMIN NOTES"
+          AdminNotes={<AdminNotesCard notes={["Review user reports", "Update system settings", "Backup database"]} />}
         >
           Welcome back admin! Here are your notes for today.
         </BentoGridItem>
 
         <BentoGridItem
           id={2}
-          onClick={(id, heading, content) => setCurrent({id, heading, content})}
+          onClick={(id, heading, content, SimpleChart, AreaChart, AdminActions, PieChart, DataTable, ActiveUsers, TotalUsers) => setCurrent({id, heading, content, SimpleChart, AreaChart, AdminActions, PieChart, DataTable, ActiveUsers, TotalUsers})}
           className="min-h-[180px] sm:min-h-[250px]"
           heading="TOTAL USERS"
+          TotalUsers={<TotalUsersCard totalUsers={1248} growthPercent={5.2} />}
         >
           1,248 registered users.
         </BentoGridItem>
 
         <BentoGridItem
           id={3}
-          onClick={(id, heading, content) => setCurrent({id, heading, content})}
+          onClick={(id, heading, content, SimpleChart, AreaChart, AdminActions, PieChart, DataTable, ActiveUsers) => setCurrent({id, heading, content, SimpleChart, AreaChart, AdminActions, PieChart, DataTable, ActiveUsers})}
           className="min-h-[180px] sm:min-h-[250px]"
           heading="ACTIVE SESSIONS"
+          ActiveUsers={<ActiveUsersCard />}
         >
           83 users online right now.
         </BentoGridItem>

@@ -1,49 +1,69 @@
-import { Cell, Pie, PieChart, PieLabelRenderProps } from 'recharts';
+import { Cell, Pie, PieChart, Legend } from "recharts";
 
-// #region Sample data
+// Active vs Inactive templates
 const data = [
-  { name: 'Group A', value: 400 },
-  { name: 'Group B', value: 300 },
-  { name: 'Group C', value: 300 },
-  { name: 'Group D', value: 200 },
+  { name: "Active Templates", value: 85 },
+  { name: "Inactive Templates", value: 65 },
 ];
 
-// #endregion
 const RADIAN = Math.PI / 180;
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = ["#4CAF50", "#D32F2F"]; // Green for active, Red for inactive
 
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: PieLabelRenderProps) => {
-  if (cx == null || cy == null || innerRadius == null || outerRadius == null) {
-    return null;
-  }
+// Label showing actual numbers inside slices
+const renderCustomizedLabel = ({
+  cx,
+  cy,
+  midAngle,
+  innerRadius,
+  outerRadius,
+  value,
+}: any) => {
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const ncx = Number(cx);
-  const x = ncx + radius * Math.cos(-(midAngle ?? 0) * RADIAN);
-  const ncy = Number(cy);
-  const y = ncy + radius * Math.sin(-(midAngle ?? 0) * RADIAN);
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
   return (
-    <text x={x} y={y} fill="white" textAnchor={x > ncx ? 'start' : 'end'} dominantBaseline="central">
-      {`${((percent ?? 1) * 100).toFixed(0)}%`}
+    <text
+      x={x}
+      y={y}
+      fill="white"
+      fontSize={15}
+      fontWeight={700}
+      textAnchor="middle"
+      dominantBaseline="central"
+    >
+      {value}
     </text>
   );
 };
 
-export default function PieChartWithCustomizedLabel({ isAnimationActive = true }: { isAnimationActive?: boolean }) {
+export default function TemplatePieChart() {
   return (
-    <PieChart style={{ width: '100%', maxWidth: '500px', maxHeight: '80vh', aspectRatio: 1 }} responsive>
+    <PieChart
+      style={{
+        width: "100%",
+        maxWidth: "500px",
+        maxHeight: "80vh",
+        aspectRatio: 1,
+      }}
+    >
       <Pie
         data={data}
+        cx="50%"
+        cy="50%"
+        innerRadius={0} // full pie (not donut)
         labelLine={false}
         label={renderCustomizedLabel}
-        fill="#8884d8"
         dataKey="value"
-        isAnimationActive={isAnimationActive}
+        isAnimationActive
       >
         {data.map((entry, index) => (
-          <Cell key={`cell-${entry.name}`} fill={COLORS[index % COLORS.length]} />
+          <Cell key={entry.name} fill={COLORS[index]} />
         ))}
       </Pie>
+
+      {/* Legend below */}
+      <Legend verticalAlign="bottom" align="center" />
     </PieChart>
   );
 }
