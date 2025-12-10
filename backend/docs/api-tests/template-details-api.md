@@ -192,8 +192,6 @@ curl -X POST "http://localhost:8080/api/template-details/add/clx123templateid" \
 
 ---
 
-
-
 ### 4. Update Template Details
 
 **Endpoint:** `PUT /update/:id`  
@@ -256,6 +254,7 @@ curl -X PUT "http://localhost:8080/api/template-details/update/clxdetail123" \
 **Description:** Delete template details
 
 **cURL Example:**
+
 ```bash
 curl -X DELETE "http://localhost:8080/api/template-details/delete/clxdetail123" \
   -b admin-cookies.txt

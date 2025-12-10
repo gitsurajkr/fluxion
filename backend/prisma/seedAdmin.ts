@@ -16,7 +16,7 @@ async function seedAdmin() {
         return;
     }
     
-    // Hash password with 12 rounds (same as registration)
+    // Hash password with 12 rounds
     const hashedPassword = await bcrypt.hash(adminPassword, 12);    
     
     // Create admin user
@@ -26,7 +26,7 @@ async function seedAdmin() {
             name: 'Admin User',
             role: 'ADMIN',
             password: hashedPassword,
-            isEmailVerified: true  // Admin doesn't need email verification
+            isEmailVerified: true 
         }
     });
     console.log('Admin user created:', adminUser.email);

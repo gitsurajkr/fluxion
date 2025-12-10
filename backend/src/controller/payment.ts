@@ -27,6 +27,19 @@ class PaymentController {
         }
 
         try {
+            // Check if user has verified their email
+            const user = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { isEmailVerified: true, email: true }
+            });
+
+            if (!user?.isEmailVerified) {
+                res.status(403).json({ 
+                    message: "Email verification required",
+                    error: "Please verify your email before making a purchase. Check your profile settings to verify your email."
+                });
+                return;
+            }
             // Get user's cart items to store with payment intent
             const cart = await prisma.cart.findMany({
                 where: { userId },
@@ -152,7 +165,7 @@ class PaymentController {
         }
 
         try {
-            // Get user's cart
+            // Get user's cart and user details
             const cartItems = await prisma.cart.findMany({
                 where: { userId },
                 include: {
@@ -165,6 +178,10 @@ class PaymentController {
                 console.error('No cart items found for user:', userId);
                 return;
             }
+
+            const user = await prisma.user.findUnique({
+                where: { id: userId }
+            });
 
             // Create order with all cart items
             const order = await prisma.order.create({
@@ -185,17 +202,68 @@ class PaymentController {
                 }
             });
 
-            // await sendConfirmationEmail(userId, order);
+            // Create purchases with download links for each template
+            const purchasePromises = cartItems.map(async (item) => {
+                const purchase = await prisma.purchase.create({
+                    data: {
+                        userId,
+                        tempelateId: item.tempelateId,
+                        orderId: order.id
+                    }
+                });
+
+                // Generate download link (expires in 7 days)
+                const downloadLink = await prisma.downloadLink.create({
+                    data: {
+                        purchaseId: purchase.id,
+                        url: item.tempelate.imageUrl, // Replace with actual Figma/download URL
+                        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+                    }
+                });
+
+                return { purchase, downloadLink, template: item.tempelate };
+            });
+
+            const purchaseData = await Promise.all(purchasePromises);
+
+            // Send email with download links
+            if (user?.email) {
+                await this.sendDownloadEmail(user.email, user.name, order.id, purchaseData);
+            }
 
             // Clear user's cart after successful order
             await prisma.cart.deleteMany({
                 where: { userId }
             });
 
-            console.log(`Order ${order.id} created successfully for payment ${paymentIntent.id}`);
+            console.log(`Order ${order.id} created with ${purchaseData.length} purchases for payment ${paymentIntent.id}`);
         } catch (error) {
             console.error('Error creating order from webhook:', error);
             throw error;
+        }
+    }
+
+    private async sendDownloadEmail(email: string, name: string, orderId: string, purchaseData: any[]): Promise<void> {
+        try {
+            const emailService = (await import('../services/emailService.ts')).default;
+            
+            const formattedPurchaseData = purchaseData.map(({ template, downloadLink }) => ({
+                templateTitle: template.title,
+                templateDescription: template.description,
+                downloadUrl: downloadLink.url,
+                expiresAt: downloadLink.expiresAt
+            }));
+
+            await emailService.sendPurchaseDownloadLinks(
+                email,
+                name,
+                orderId,
+                formattedPurchaseData
+            );
+
+            console.log(`[PAYMENT] Download email sent to ${email}`);
+        } catch (error) {
+            console.error('[PAYMENT] Failed to send download email:', error);
         }
     }
 }

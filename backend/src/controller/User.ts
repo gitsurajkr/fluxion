@@ -4,7 +4,6 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import xss from "xss";
-import { promises } from 'node:dns';
 import emailService from '../services/emailService.ts';
 
 class UserController {
@@ -484,6 +483,7 @@ class UserController {
 					email: true,
 					name: true,
 					role: true,
+					isEmailVerified: true,
 					createdAt: true,
 					updatedAt: true,
 				},

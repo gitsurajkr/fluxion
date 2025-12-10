@@ -169,6 +169,69 @@ If you didn't create an account with Fluxion, you can safely ignore this email.
             text,
         });
     }
+
+    async sendPurchaseDownloadLinks(
+        email: string, 
+        userName: string, 
+        orderId: string,
+        purchaseData: Array<{
+            templateTitle: string;
+            templateDescription: string;
+            downloadUrl: string;
+            expiresAt: Date;
+        }>
+    ): Promise<boolean> {
+        const downloadLinksHtml = purchaseData.map(item => `
+            <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 15px 0;">
+                <h3 style="margin: 0 0 10px 0; color: #111827;">${xss(item.templateTitle)}</h3>
+                <p style="color: #6b7280; margin: 0 0 15px 0; font-size: 14px;">${xss(item.templateDescription)}</p>
+                <a href="${item.downloadUrl}" 
+                   style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                    Download Now
+                </a>
+                <p style="color: #9ca3af; font-size: 12px; margin: 10px 0 0 0;">
+                    Link expires: ${item.expiresAt.toLocaleString()}
+                </p>
+            </div>
+        `).join('');
+
+        const html = this.loadTemplate('purchaseDownloadLinks', {
+            userName: userName,
+            orderId: orderId,
+            downloadLinks: downloadLinksHtml,
+            year: new Date().getFullYear().toString()
+        });
+
+        const text = `
+Thank You for Your Purchase!
+
+Hi ${userName},
+
+Your payment has been successfully processed! Here are your download links:
+
+Order ID: ${orderId}
+
+${purchaseData.map(item => `
+${item.templateTitle}
+${item.templateDescription}
+Download: ${item.downloadUrl}
+Expires: ${item.expiresAt.toLocaleString()}
+`).join('\n---\n')}
+
+Important: Download links will expire in 7 days for security reasons.
+
+Need help? Contact our support team at support@fluxion.com
+
+© ${new Date().getFullYear()} Fluxion. All rights reserved.
+        `;
+
+        return await this.sendEmail({
+            to: email,
+            subject: `Your Purchase is Ready - Order #${orderId.substring(0, 8)}`,
+            html,
+            text,
+        });
+    }
 }
 
 export default new EmailService();

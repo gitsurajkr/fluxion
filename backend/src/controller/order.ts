@@ -36,8 +36,10 @@ class OrderController {
             select: {
               id: true,
               title: true,
+              description: true,
               price: true,
-              isActive: true
+              isActive: true,
+              imageUrl: true
             }
           },
           tempelateDetail: {
@@ -86,12 +88,12 @@ class OrderController {
 
       // Create order with order items in transaction
       const order = await prisma.$transaction(async (tx) => {
-        // Create order
+        // Create order with COMPLETED status (payment already verified)
         const newOrder = await tx.order.create({
           data: {
             userId,
             total,
-            status: "PENDING",
+            status: "COMPLETED", 
             paymentId,
             paymentRef
           }
@@ -108,6 +110,26 @@ class OrderController {
           }))
         });
 
+        // Create purchases with download links for each template
+        for (const cartItem of cartItems) {
+          const purchase = await tx.purchase.create({
+            data: {
+              userId,
+              tempelateId: cartItem.tempelateId,
+              orderId: newOrder.id
+            }
+          });
+
+          // Generate download link (expires in 7 days)
+          await tx.downloadLink.create({
+            data: {
+              purchaseId: purchase.id,
+              url: cartItem.tempelate.imageUrl, // Replace with actual Figma/download URL
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+            }
+          });
+        }
+
         // Clear user's cart
         await tx.cart.deleteMany({
           where: { userId }
@@ -116,14 +138,48 @@ class OrderController {
         return newOrder;
       });
 
+      // Send email with download links
+      try {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        
+        if (user?.email) {
+          const purchases = await prisma.purchase.findMany({
+            where: { orderId: order.id },
+            include: {
+              tempelate: true,
+              downloadLinks: true
+            }
+          });
+
+          const emailService = (await import('../services/emailService.ts')).default;
+          
+          const purchaseData = purchases.map(purchase => ({
+            templateTitle: purchase.tempelate.title,
+            templateDescription: purchase.tempelate.description,
+            downloadUrl: purchase.downloadLinks[0]?.url || purchase.tempelate.imageUrl,
+            expiresAt: purchase.downloadLinks[0]?.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          }));
+
+          await emailService.sendPurchaseDownloadLinks(
+            user.email,
+            user.name,
+            order.id,
+            purchaseData
+          );
+
+          console.log(`[ORDER] Download email sent to ${user.email}`);
+        }
+      } catch (emailError) {
+        console.error('[ORDER] Failed to send email, but order was created:', emailError);
+      }
+
       res.status(201).json({
         message: "Order created successfully",
         order: {
           id: order.id,
           total: order.total,
           status: order.status,
-          createdAt: order.createdAt,
-          note: "Payment processing to be implemented"
+          createdAt: order.createdAt
         }
       });
 
