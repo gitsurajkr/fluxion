@@ -3,7 +3,6 @@ import express from "express";
 import routes from "./routes/rootRouter.ts";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-// import webhook from "./routes/paymentRoutes.ts";
 class Server {
     public app = express();
     private port = process.env.PORT || 5000;
@@ -15,7 +14,7 @@ class Server {
     }
 
     private config() {
-        const clientUrl = process.env.CLIENT_URL || "http://localhost:4040";
+        const clientUrl = process.env.CLIENT_URL || "http://localhost:4040" || " http://127.0.0.1:4040";
         const adminUrl = process.env.ADMIN_URL || "http://localhost:3001";
         
         // Enable CORS for both client and admin apps
@@ -33,10 +32,6 @@ class Server {
 
     private routes() {
         this.app.use("/api", routes);
-        // this.app.use("/webhook", webhook)
-        // this.app.use("/webhook", webhook)
-
-
     }
 
     private start() {
