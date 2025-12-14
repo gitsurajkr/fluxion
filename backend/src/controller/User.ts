@@ -48,8 +48,10 @@ class UserController {
 				httpOnly: true,
 				secure: process.env.NODE_ENV === "production",
 				sameSite: "lax",
-				maxAge: 1000 * 60 * 60, // 1 hour
-			}); const { password, ...safeUser } = user;
+				maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+				path: "/"
+			});
+			const { password, ...safeUser } = user;
 
 			res.status(201).json({ message: "User registered successfully", user: safeUser });
 
@@ -101,7 +103,7 @@ class UserController {
 				httpOnly: true,
 				secure: process.env.NODE_ENV === "production",
 				sameSite: "lax",
-				maxAge: 1000 * 60 * 60, // 1 hour
+				maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
 				path: "/"
 			});
 

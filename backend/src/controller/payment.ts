@@ -56,13 +56,9 @@ class PaymentController {
 
             // Determine payment method types based on request
             const paymentMethodTypes: string[] = ['card'];
-            
-            if (paymentMethod === 'upi') {
-                paymentMethodTypes.push('upi');
-            }
 
-            console.log("Creating payment intent with method types:", paymentMethodTypes);
-            console.log("Stripe Key exists:", !!process.env.STRIPE_SECRET_KEY);
+            // console.log("Creating payment intent with method types:", paymentMethodTypes);
+            // console.log("Stripe Key exists:", !!process.env.STRIPE_SECRET_KEY);
 
             // Create payment intent with metadata and payment method types
             const paymentIntent = await stripe.paymentIntents.create({

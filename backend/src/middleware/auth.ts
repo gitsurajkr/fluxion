@@ -58,7 +58,7 @@ class AuthMiddleware {
         message: "Too many password reset attempts. Please try again in 15 minutes.",
         standardHeaders: true,
         legacyHeaders: false,
-        skipSuccessfulRequests: false, // Count all requests, even successful ones
+        skipSuccessfulRequests: false,
     });
 
 }
